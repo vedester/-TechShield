@@ -1,7 +1,7 @@
-const nodemailer = require('nodemailer'); 
 const express = require('express');
 const cors = require('cors');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { Resend } = require('resend'); // 1. Added Resend
 require('dotenv').config();
 
 const app = express();
@@ -10,98 +10,61 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Initialize APIs
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY); // 2. Initialize Resend
 
-// Email Transporter
-// Email Transporter - Updated for better Cloud compatibility
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false, // MUST be false for port 587
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        // This is the "Magic Fix" for Render timeouts. 
-        // It prevents the server from hanging during the security handshake.
-        rejectUnauthorized: false,
-        minVersion: "TLSv1.2"
-    },
-    connectionTimeout: 10000, // Wait 10 seconds before giving up
-    debug: true, // This will print more info in the Render logs
-    logger: true // This will show us the "handshake" process
-});
-
-console.log("Checking Environment Variables...");
-console.log("Email User exists:", !!process.env.EMAIL_USER);
-console.log("Email Pass exists:", !!process.env.EMAIL_PASS);
-// ------------------ CHATBOT ROUTE ------------------
+// ------------------ CHATBOT ROUTE (No changes needed) ------------------
 app.post('/api/chat', async (req, res) => {
     try {
         const { message } = req.body;
-
-        if (!message) {
-            return res.status(400).json({ error: "No message provided" });
-        }
-
         const model = genAI.getGenerativeModel({ 
             model: "gemini-2.5-flash",
-            systemInstruction: `
-                You are the AI assistant for TechShield Solutions.
-                Services: Software Development, IT Support, Networking, Cybersecurity.
-                Be professional and concise.
-            `
+            systemInstruction: "You are the AI assistant for TechShield Solutions. Be professional and concise."
         });
-
         const result = await model.generateContent(message);
         res.json({ text: result.response.text() });
-
     } catch (error) {
         console.error("❌ Gemini API Error:", error.message);
         res.status(500).json({ error: "AI Service Error" });
     }
 });
 
-// ------------------ INQUIRY ROUTE ------------------
+// ------------------ INQUIRY ROUTE (NEW Resend logic) ------------------
 app.post('/api/inquiry', async (req, res) => {
     const { firstName, lastName, email, service, message } = req.body;
 
-    if (!email || !message || !service) {
-        return res.status(400).json({
-            error: "Email, service, and message are required"
-        });
-    }
-
     try {
-        await transporter.sendMail({
-            from: `"TechShield Website" <${process.env.EMAIL_USER}>`,
-            to: "vedester@gmail.com",
-            replyTo: email,
+        // Note: On Resend Free Tier without a domain, you MUST send FROM 'onboarding@resend.dev'
+        const { data, error } = await resend.emails.send({
+            from: 'TechShield <onboarding@resend.dev>', 
+            to: ['vedester@gmail.com'], // Where you want to receive the lead
             subject: `🚀 New TechShield Inquiry: ${service}`,
             html: `
                 <h2>New Business Inquiry</h2>
                 <p><strong>Name:</strong> ${firstName} ${lastName}</p>
-                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Customer Email:</strong> ${email}</p>
                 <p><strong>Service:</strong> ${service}</p>
                 <p><strong>Message:</strong></p>
-                <p>${message}</p>
+                <p style="padding: 10px; background: #f4f4f4;">${message}</p>
             `
         });
 
-        console.log("📩 Inquiry email sent successfully");
+        if (error) {
+            console.error("❌ Resend API Error:", error);
+            return res.status(500).json({ error: "Email service failed" });
+        }
+
+        console.log("📩 Inquiry sent successfully via Resend API");
         res.json({ status: "success" });
 
     } catch (error) {
-        console.error("❌ Email Error:", error.message);
-        res.status(500).json({ error: "Email service failed" });
+        console.error("❌ Server Error:", error.message);
+        res.status(500).json({ error: "Internal Server Error" });
     }
 });
 
-
-
-// ------------------ SERVER ------------------
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`🚀 TechShield Backend running on http://localhost:${PORT}`);
+    console.log(`🚀 TechShield Backend running on port ${PORT}`);
 });
