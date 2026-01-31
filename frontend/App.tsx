@@ -1,3 +1,4 @@
+import './index.css';
 import React, { useState } from 'react';
 
 import { 
@@ -21,7 +22,7 @@ const App: React.FC = () => {
   firstName: "",
   lastName: "",
   email: "",
-  service: "",
+  service: SERVICES[0].title, // Start with the first service instead of empty
   message: ""
 });
 
