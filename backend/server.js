@@ -5,7 +5,9 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: ["https://tech-shield.vercel.app", "http://localhost:5173", "https://tech-shield-solutions.vercel.app"] 
+}));
 app.use(express.json());
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -82,6 +84,8 @@ app.post('/api/inquiry', async (req, res) => {
         res.status(500).json({ error: "Email service failed" });
     }
 });
+
+
 
 // ------------------ SERVER ------------------
 const PORT = process.env.PORT || 5000;

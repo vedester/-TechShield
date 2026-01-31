@@ -1,7 +1,7 @@
 //frontend/services/gemini.ts,
 export const getChatResponse = async (message: string) => {
   try {
-    const response = await fetch('http://localhost:5000/api/chat', {
+    const response = await fetch('https://techshield-backend.onrender.com/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message }),
@@ -14,4 +14,4 @@ export const getChatResponse = async (message: string) => {
     console.error("Frontend fetch error:", error);
     return "Our support system is currently experiencing issues. Please contact us at +254 706 747884.";
   }
-};
+}; 
