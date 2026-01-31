@@ -12,7 +12,9 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Email Transporter
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+     host: "smtp.gmail.com",
+    port: 465,
+    secure: true, // MUST be true for port 465
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
