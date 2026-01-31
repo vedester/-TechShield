@@ -17,15 +17,18 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 587,
-    secure: false, // Use false for 587, true for 465
+    secure: false, // MUST be false for port 587
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
     tls: {
-        // This helps bypass some network restrictions on hosting providers
-        rejectUnauthorized: false 
-    }
+        // This is the "Magic Fix" for Render timeouts. 
+        // It prevents the server from hanging during the security handshake.
+        rejectUnauthorized: false,
+        minVersion: "TLSv1.2"
+    },
+    connectionTimeout: 10000, // Wait 10 seconds before giving up
 });
 // ------------------ CHATBOT ROUTE ------------------
 app.post('/api/chat', async (req, res) => {
