@@ -29,7 +29,13 @@ const transporter = nodemailer.createTransport({
         minVersion: "TLSv1.2"
     },
     connectionTimeout: 10000, // Wait 10 seconds before giving up
+    debug: true, // This will print more info in the Render logs
+    logger: true // This will show us the "handshake" process
 });
+
+console.log("Checking Environment Variables...");
+console.log("Email User exists:", !!process.env.EMAIL_USER);
+console.log("Email Pass exists:", !!process.env.EMAIL_PASS);
 // ------------------ CHATBOT ROUTE ------------------
 app.post('/api/chat', async (req, res) => {
     try {
