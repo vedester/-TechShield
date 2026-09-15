@@ -1,4 +1,6 @@
 
+'use client';
+
 import React, { useState } from 'react';
 
 import { 
@@ -10,7 +12,6 @@ import {
   ArrowRight,
   ChevronRight,
   ExternalLink,
-  MessageSquare,
   CheckCircle2
 } from 'lucide-react';
 import { SERVICES, CONTACT } from './constants';
@@ -22,7 +23,7 @@ const App: React.FC = () => {
   firstName: "",
   lastName: "",
   email: "",
-  service: SERVICES[0].title, // Start with the first service instead of empty
+  service: SERVICES[0].title,
   message: ""
 });
 
@@ -36,7 +37,8 @@ const handleSubmit = async (e: React.FormEvent) => {
   setStatus("");
 
   try {
-    const res = await fetch('https://techshield-backend.onrender.com/api/inquiry', {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://techshield-backend.onrender.com';
+    const res = await fetch(`${backendUrl}/api/inquiry`, {
 
       method: "POST",
       headers: {
@@ -45,10 +47,10 @@ const handleSubmit = async (e: React.FormEvent) => {
       body: JSON.stringify(formData),
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      throw new Error(data.message || "Failed to send inquiry");
+      throw new Error(data.message || data.error || "Failed to send inquiry");
     }
 
     setStatus("success");
@@ -56,7 +58,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       firstName: "",
       lastName: "",
       email: "",
-      service: "",
+      service: SERVICES[0].title,
       message: "",
     });
   } catch (err: any) {
